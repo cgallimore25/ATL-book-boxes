@@ -1,7 +1,7 @@
 # Clear all
 rm(list = ls())
 
-# library(tidyverse)
+library(viridis)
 library(leaflet)
 library(sf)
 library(shiny)
@@ -9,13 +9,14 @@ library(readr)
 library(dplyr)
 
 # Read in book box data, COI data, and zip code spatial data
-box_data <- read.csv('C:\\Users\\cgallimore1\\Documents\\ATL-book-box\\shiny\\Book_box_locs.csv')
-COI_data <- read.csv('C:\\Users\\cgallimore1\\Documents\\ATL-book-box\\shiny\\2020_COI_from_zip.csv')
-zc_spatial <- st_read('C:\\Users\\cgallimore1\\Documents\\ATL-book-box\\shiny\\georgia-zip-codes-_1578.geojson')
+box_data <- read.csv('C:\\Users\\cgallimore1\\Documents\\R_projects\\ATL-book-box\\shiny\\data\\Book_box_locs.csv')
+COI_data <- read.csv('C:\\Users\\cgallimore1\\Documents\\R_projects\\ATL-book-box\\shiny\\data\\2020_COI_from_zip.csv')
+zc_spatial <- st_read('C:\\Users\\cgallimore1\\Documents\\R_projects\\ATL-book-box\\shiny\\data\\georgia-zip-codes-_1578.geojson')
 
-# Convert 'Charted' into a factor (categorical) if it's not already
+# Make some categorical variables
 box_data$Charted <- as.factor(box_data$Charted)
 box_data$Zip <- as.factor(box_data$Zip)
+box_data$Self_collected <- factor(box_data$Self_collected, levels = c(0, 1), labels = c("no", "yes"))
 
 # Get unique zip codes
 u_zips = unique(box_data$Zip)
@@ -45,6 +46,7 @@ dem_norm$SE <- SE
 
 
 # Create data frame 'df' with box count, zip-level COI comps, & demographic diversity
+# Change these var names and refactor to a direct reference at 'zip_choices'?
 df <- data.frame(freq_tbl$Freq, sub_COIs[, 25:28], SE)
 colnames(df) <- c('n_boxes', 'r_ed_nat', 'r_he_nat', 'r_se_nat', 'r_coi_nat', 's_entropy')
 # rownames(df) <- dem_norm$zip
@@ -59,6 +61,7 @@ zs_box_data <- zs_box_data %>%
 
 # Expand data frame by repeating COI / entropy data for repeat zip codes
 expanded_df <- df[rep(seq_len(nrow(df)), times = freq_tbl$Freq), ]
+expanded_df$self_c <- zs_box_data$Self_collected
 rownames(expanded_df) <- NULL
 
 
@@ -75,36 +78,41 @@ sub_z_srt = sub_zc %>%
   arrange(ZCTA5CE10)
 
 # Define some drop-down menu choices for our app
-input_choices= c("Number of Boxes" = "n_boxes",
-                 "Education Resources" = "r_ed_nat", 
-                 "Health & Safety" = "r_he_nat", 
-                 "Socioeconomic Factors" = "r_se_nat", 
+zip_choices= c("Number of boxes" = "n_boxes",
+                 "Ed resources" = "r_ed_nat", 
+                 "Health, env, safety" = "r_he_nat", 
+                 "Socioeconomic" = "r_se_nat", 
                  "Composite COI" = "r_coi_nat", 
-                 "Community Diversity" = "s_entropy")
+                 "Community diversity" = "s_entropy")
+
+box_choices= c(zip_choices, "Self-collected" = "self_c")
 
 
 # Define UI for the Shiny app
 ui <- fluidPage(
-
+  
+  # Make height adaptable to screen
+  tags$style(type = "text/css", "#map {height: calc(100vh - 80px) !important;}"),
+  
   titlePanel("Interactive Book Box Density Map"),
   
   # Use absolutePanel to position the dropdown on the right side
   absolutePanel(id = "controls", class = "panel panel-default", fixed = TRUE,
                 draggable = TRUE, top = 60, right = 20, width = 300,
                 selectInput("color_by", "Select Variable to Color Map By:",
-                            choices = input_choices,
+                            choices = zip_choices,
                             selected = "n_boxes"),
-                checkboxInput("show_box_locs", "Overlay Bookbox Locations", value = FALSE),
+                checkboxInput("show_zip_brds", "Zip Densities", value = TRUE),
+                checkboxInput("show_box_locs", "Bookbox Locations", value = FALSE),
                 selectInput("color_box_locs", "Select Variable to Color Bookbox Locations By:",
-                            choices = input_choices,
+                            choices = box_choices,
                             selected = "n_boxes")
   ),
   
-  # Main panel to display the Leaflet map
+  # Leaflet map main panel
   mainPanel(
-    leafletOutput("map", width = "100%", height = "800px")  # Adjust height if needed
+    leafletOutput("map", width = "100%", height = '100vh')  # Adjust height if needed
   )
-  
 )
 
 
@@ -112,7 +120,7 @@ ui <- fluidPage(
 server <- function(input, output, session) {
   
   # Convert inputs to list that can be passed to legend titles
-  var_lookup <- setNames(as.list(names(input_choices)), unlist(input_choices))
+  var_lookup <- setNames(as.list(names(box_choices)), unlist(box_choices))
   
   # Create base map
   output$map <- renderLeaflet({
@@ -125,17 +133,32 @@ server <- function(input, output, session) {
   
   # Manage zip borders overlay
   observe({
-    color_by <- input$color_by
-    colorData <- df[[color_by]]
-    pal <- colorBin("Reds", domain = colorData, bins = 7, pretty = FALSE)
-    
-    leafletProxy("map", data = sub_z_srt) %>%
-      clearGroup("zip_borders") %>%             # Clear only the polygon group
-      removeControl("bords_legend") %>%         # Clear previous box legend
-      addPolygons(fillColor = ~pal(colorData),
-                  fillOpacity = 0.7, color = "black", weight = 1, group = "zip_borders") %>%
-      addLegend("topright", pal = pal, values = colorData, title = var_lookup[[color_by]], layerId = "bords_legend")
-    
+    if (input$show_zip_brds) {
+      color_by <- input$color_by
+      colorData <- df[[color_by]]
+      # Good color combos: Blues & Rocket
+      #                    Reds & showMako/Cividis
+      pal <- colorBin("Reds", domain = colorData, bins = 7, pretty = FALSE)
+      
+      # pal <- colorBin(viridis(7, option = "cividis"), domain = colorData, bins = 7, pretty = FALSE)
+      
+      leafletProxy("map", data = sub_z_srt) %>%
+        clearGroup("zip_borders") %>%             # Clear only the polygon group
+        removeControl("bords_legend") %>%         # Clear previous box legend
+        addPolygons(fillColor = ~pal(colorData),
+                    fillOpacity = 0.7, color = "black", weight = 1, 
+                    group = "zip_borders",
+                    popup = ~paste("Zip:", ZCTA5CE10, "<br>",
+                                   var_lookup[[color_by]], ":", colorData) ) %>%
+        addLegend("topright", pal = pal, values = colorData, 
+                  title = var_lookup[[color_by]], 
+                  layerId = "bords_legend",
+                  labFormat = labelFormat(digits = 1))    
+      } else {
+      leafletProxy("map") %>%
+        clearGroup("zip_borders") %>%             # Clear only the polygon group
+        removeControl("bords_legend")             # Clear previous box legend
+    }
   })
   
   # Manage book box markers overlay
@@ -143,12 +166,20 @@ server <- function(input, output, session) {
     if (input$show_box_locs) {
       color_box_locs <- input$color_box_locs
       colorBoxData <- merged_dat[[color_box_locs]]
-      pal_pts <- colorBin("viridis", domain = colorBoxData, bins = 7, pretty = FALSE)
+      if (color_box_locs == "self_c") {
+        pal_pts <- colorFactor(viridis(7, option = "cividis"), colorBoxData)
+      } else {
+        colorBoxData <- merged_dat[[color_box_locs]]
+        pal_pts <- colorBin(viridis(7, option = "cividis"), 
+                            domain = colorBoxData, pretty = FALSE)
+        
+        # pal_pts <- colorBin(viridis(7, option = "cividis"), domain = colorBoxData, pretty = FALSE)
+      }
       
       # Capture current zoom level to adjust marker size
       zoom_level <- input$map_zoom
       radius <- 110000 * (0.6 ^ zoom_level)  # Scale marker size inversely with zoom level
-      
+
       leafletProxy("map", data = merged_dat) %>%
         clearGroup("book_boxes") %>%            # Clear existing markers
         removeControl("boxes_legend") %>%         # Clear previous box legend
@@ -159,7 +190,10 @@ server <- function(input, output, session) {
                                   "Longitude:", Longitude, "<br>",
                                   "Address:", paste0(Number, " ", Street, ", ", Zip), "<br>",
                                   var_lookup[[color_box_locs]], ":", colorBoxData) ) %>%
-        addLegend("bottomright", pal = pal_pts, values = colorBoxData, title = var_lookup[[color_box_locs]], layerId = "boxes_legend")
+        addLegend("bottomright", pal = pal_pts, values = colorBoxData, 
+                  title = var_lookup[[color_box_locs]], 
+                  layerId = "boxes_legend",
+                  labFormat = labelFormat(digits = 1))
       
     } else {
       leafletProxy("map") %>%
