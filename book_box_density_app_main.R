@@ -15,8 +15,8 @@ COI_data <- read.csv('C:\\Users\\cgallimore1\\Documents\\R_projects\\ATL-book-bo
 zc_spatial <- st_read('C:\\Users\\cgallimore1\\Documents\\R_projects\\ATL-book-boxes\\data\\georgia-zip-codes-_1578.geojson')
 
 # Make some categorical variables
-box_data$Charted <- as.factor(box_data$Charted)
 box_data$Zip <- as.factor(box_data$Zip)
+box_data$Charted <- factor(box_data$Charted, levels = c(0, 1), labels = c("no", "yes"))
 box_data$Self_collected <- factor(box_data$Self_collected, levels = c(0, 1), labels = c("no", "yes"))
 
 # Get unique zip codes
@@ -87,7 +87,7 @@ zip_choices= c("Number of boxes" = "n_boxes",
                  "Composite COI" = "r_coi_nat", 
                  "Community diversity" = "s_entropy")
 
-box_choices= c(zip_choices, "Self-collected" = "self_c")
+box_choices= c(zip_choices, "Self-collected" = "self_c", "Charted" = "charted")
 
 
 # Define UI for the Shiny app
@@ -108,7 +108,26 @@ ui <- fluidPage(
                 checkboxInput("show_box_locs", "Bookbox Locations", value = FALSE),
                 selectInput("color_box_locs", "Select Variable to Color Bookbox Locations By:",
                             choices = box_choices,
-                            selected = "n_boxes")
+                            selected = "n_boxes"),
+  ),
+  
+  # Color palette buttons positioned in bottom-right corner
+  div(style = "position: absolute; bottom: 20px; right: 20px; display: flex;",
+      tags$button(
+        id = "c1_bttn",
+        class = "btn action-button",
+        tags$img(src = "cividis.png", height = "50px")
+      ),
+      tags$button(
+        id = "c2_bttn",
+        class = "btn action-button",
+        tags$img(src = "mako.png", height = "50px")
+      ),
+      tags$button(
+        id = "c3_bttn",
+        class = "btn action-button",
+        tags$img(src = "rocket.png", height = "50px")
+      )
   ),
   
   # Leaflet map main panel
@@ -124,6 +143,12 @@ server <- function(input, output, session) {
   # Convert inputs to list that can be passed to legend titles
   var_lookup <- setNames(as.list(names(box_choices)), unlist(box_choices))
   
+  # Use reactive values for palette tracking
+  palettes <- reactiveValues(selected_palette = "cividis", 
+                             zip_pal = "Reds",     # For zip borders
+                             box_pal = viridis::viridis(7, option = "cividis"))  # For book box markers
+  
+  
   # Create base map
   output$map <- renderLeaflet({
     leaflet() %>%
@@ -133,16 +158,36 @@ server <- function(input, output, session) {
       
   })
   
+  # Manage color palette based on button clicks using observeEvent
+  observeEvent(input$c1_bttn, {
+    palettes$selected_palette <- "cividis"
+    palettes$box_pal <- viridis::viridis(7, option = "cividis")  # Standard 7-bin palette
+    palettes$zip_pal <- "Reds"  # For zip borders
+  })
+  
+  observeEvent(input$c2_bttn, {
+    palettes$selected_palette <- "mako"
+    full_palette <- viridis::viridis(8, option = "mako")  # Generate 8 colors
+    palettes$box_pal <- full_palette[-8]  # Remove the brightest color
+    palettes$zip_pal <- "Reds"  # For zip borders
+  })
+  
+  observeEvent(input$c3_bttn, {
+    palettes$selected_palette <- "rocket"
+    full_palette <- viridis::viridis(8, option = "rocket")  # Generate 8 colors
+    palettes$box_pal <- full_palette[-8]  # Remove the brightest color
+    palettes$zip_pal <- "Blues"  # For zip borders
+  })
+  
+  
   # Manage zip borders overlay
   observe({
     if (input$show_zip_brds) {
       color_by <- input$color_by
       colorData <- df[[color_by]]
       # Good color combos: Blues & Rocket
-      #                    Reds & showMako/Cividis
-      pal <- colorBin("Reds", domain = colorData, bins = 7, pretty = FALSE)
-      
-      # pal <- colorBin(viridis(7, option = "cividis"), domain = colorData, bins = 7, pretty = FALSE)
+      #                    Reds & Mako/Cividis
+      pal <- colorBin(palettes$zip_pal, domain = colorData, bins = 7, pretty = FALSE)
       
       leafletProxy("map", data = sub_z_srt) %>%
         clearGroup("zip_borders") %>%             # Clear only the polygon group
@@ -163,19 +208,29 @@ server <- function(input, output, session) {
     }
   })
   
+  # observeEvent(input$map_shape_click, {
+  #   clicked_zip <- input$map_shape_click$id
+  #   
+  #   leafletProxy("map", data = sub_z_srt) %>%
+  #     clearGroup("zip_borders") %>%
+  #     addPolygons(
+  #       fillColor = ~ifelse(ZCTA5CE10 == clicked_zip, ~pal(colorData), NA),  # Gray out non-selected polygons
+  #       fillOpacity = ~ifelse(ZCTA5CE10 == clicked_zip, 0.7, 0.3),  # Adjust opacity for non-selected
+  #       color = ~ifelse(ZCTA5CE10 == clicked_zip, "black", NA),  # Black for selected, no border for non-selected
+  #       weight = ~ifelse(ZCTA5CE10 == clicked_zip, 2, 1),  # Thicker border for selected polygon
+  #       group = "zip_borders"
+  #     )
+  # })
+  # 
   # Manage book box markers overlay
   observe({
     if (input$show_box_locs) {
       color_box_locs <- input$color_box_locs
       colorBoxData <- merged_dat[[color_box_locs]]
-      if (color_box_locs == "self_c") {
-        pal_pts <- colorFactor(viridis(7, option = "cividis"), colorBoxData)
+      if (color_box_locs == "self_c" || color_box_locs == "charted") {
+        pal_pts <- colorFactor(palettes$box_pal, colorBoxData)
       } else {
-        colorBoxData <- merged_dat[[color_box_locs]]
-        pal_pts <- colorBin(viridis(7, option = "cividis"), 
-                            domain = colorBoxData, pretty = FALSE)
-        
-        # pal_pts <- colorBin(viridis(7, option = "cividis"), domain = colorBoxData, pretty = FALSE)
+        pal_pts <- colorBin(palettes$box_pal, domain = colorBoxData, pretty = FALSE)
       }
       
       # Capture current zoom level to adjust marker size
