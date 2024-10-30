@@ -4,150 +4,114 @@ rm(list = ls())
 library(viridisLite)
 library(viridis)
 library(leaflet)
-library(sf)
 library(shiny)
-library(readr)
-library(dplyr)
+library(shinyWidgets)
 
-# Read in book box data, COI data, and zip code spatial data
-box_data <- read.csv('C:\\Users\\cgallimore1\\Documents\\R_projects\\ATL-book-boxes\\data\\Book_box_locs.csv')
-COI_data <- read.csv('C:\\Users\\cgallimore1\\Documents\\R_projects\\ATL-book-boxes\\data\\2020_COI_from_zip.csv')
-zc_spatial <- st_read('C:\\Users\\cgallimore1\\Documents\\R_projects\\ATL-book-boxes\\data\\georgia-zip-codes-_1578.geojson')
+# Get data
+source("global.R")
 
-# Make some categorical variables
-box_data$Zip <- as.factor(box_data$Zip)
-box_data$Charted <- factor(box_data$Charted, levels = c(0, 1), labels = c("no", "yes"))
-box_data$Self_collected <- factor(box_data$Self_collected, levels = c(0, 1), labels = c("no", "yes"))
-
-# Get unique zip codes
-u_zips = unique(box_data$Zip)
-
-# Get COI data for zip codes in book box sheet
-sub_COIs <- COI_data %>%
-  filter(COI_data$zip %in% u_zips)
-
-freq_tbl <- as.data.frame(table(box_data$Zip))
-
-# Normalize selected demographic columns by population
-dem_norm <- data.frame(sub_COIs$zip, sub_COIs[, 7:12] / sub_COIs$pop)
-names(dem_norm)[names(dem_norm) == 'sub_COIs.zip'] <- 'zip'
-dem_norm$zip <- as.factor(dem_norm$zip)
-
-# Shannon Entropy function -- for demographic diversity
-shannon_entropy <- function(row) {
-  prob <- row / sum(row)
-  prob <- prob[prob > 0]
-  -sum(prob * log2(prob))
-}
-
-# Compute diversity
-SE <- apply(dem_norm[, 2:7], 1, shannon_entropy)
-
-dem_norm$SE <- SE
+# Load modules
+source("modules/paletteButtonUI.R")
+source("modules/paletteButtonServer.R")
 
 
-# Create data frame 'df' with box count, zip-level COI comps, & demographic diversity
-# Change these var names and refactor to a direct reference at 'zip_choices'?
-df <- data.frame(freq_tbl$Freq, sub_COIs[, 25:28], SE)
-colnames(df) <- c('n_boxes', 'r_ed_nat', 'r_he_nat', 'r_se_nat', 'r_coi_nat', 's_entropy')
-# rownames(df) <- dem_norm$zip
-
-
-# Re-order book box data by zip code and remove NAs
-zs_box_data <- box_data[order(box_data$Zip),]
-
-zs_box_data <- zs_box_data %>%
-  filter(!is.na(Latitude) & !is.na(Longitude))
-
-
-# Expand data frame by repeating COI / entropy data for repeat zip codes
-expanded_df <- df[rep(seq_len(nrow(df)), times = freq_tbl$Freq), ]
-expanded_df$self_c <- zs_box_data$Self_collected
-expanded_df$charted <- zs_box_data$Charted
-rownames(expanded_df) <- NULL
-
-
-# Merge for plotting & clean-up empty street numbers
-merged_dat <- cbind(zs_box_data, expanded_df)
-merged_dat$Number[is.na(merged_dat$Number)] <- ""
-
-
-# Filter and sort spatial data to include only zip codes in bookbox table
-sub_zc <- zc_spatial %>%
-  filter(zc_spatial$ZCTA5CE10 %in% u_zips)
-
-sub_z_srt = sub_zc %>%
-  arrange(ZCTA5CE10)
-
-# Define some drop-down menu choices for our app
+# Associate column variables with clean drop-down menu choices
 zip_choices= c("Number of boxes" = "n_boxes",
-                 "Ed resources" = "r_ed_nat", 
-                 "Health, env, safety" = "r_he_nat", 
-                 "Socioeconomic" = "r_se_nat", 
-                 "Composite COI" = "r_coi_nat", 
-                 "Community diversity" = "s_entropy")
+               "Ed resources" = "r_ed_nat", 
+               "Health, env, safety" = "r_he_nat", 
+               "Socioeconomic" = "r_se_nat", 
+               "Composite COI" = "r_coi_nat", 
+               "Community diversity" = "s_entropy")
 
-box_choices= c(zip_choices, "Self-collected" = "self_c", "Charted" = "charted")
+box_choices= c(zip_choices, 
+               "Self-collected" = "self_c", 
+               "Online" = "charted")
+
+n_bins <- 7
 
 
 # Define UI for the Shiny app
-ui <- fluidPage(
-  
-  # Make height adaptable to screen
-  tags$style(type = "text/css", "#map {height: calc(100vh - 80px) !important;}"),
-  
-  titlePanel("Interactive Book Box Density Map"),
-  
-  # Use absolutePanel to position the dropdown on the right side
-  absolutePanel(id = "controls", class = "panel panel-default", fixed = TRUE,
-                draggable = TRUE, top = 60, right = 20, width = 300,
-                selectInput("color_zip_by", "Select Variable to Color Map By:",
-                            choices = zip_choices,
-                            selected = "n_boxes"),
-                checkboxInput("show_zip_brds", "Zip Densities", value = TRUE),
-                checkboxInput("show_box_locs", "Bookbox Locations", value = FALSE),
-                selectInput("color_box_by", "Select Variable to Color Bookbox Locations By:",
-                            choices = box_choices,
-                            selected = "n_boxes"),
-  ),
-  
-  # Color palette buttons positioned in bottom-right corner
-  div(style = "position: absolute; bottom: 20px; right: 20px; display: flex;",
-      tags$button(
-        id = "c1_bttn",
-        class = "btn action-button",
-        tags$img(src = "cividis.png", height = "50px")
-      ),
-      tags$button(
-        id = "c2_bttn",
-        class = "btn action-button",
-        tags$img(src = "mako.png", height = "50px")
-      ),
-      tags$button(
-        id = "c3_bttn",
-        class = "btn action-button",
-        tags$img(src = "rocket.png", height = "50px")
-      )
-  ),
-  
-  # Leaflet map main panel
-  mainPanel(
-    leafletOutput("map", width = "100%", height = '100vh')  # Adjust height if needed
-  )
+ui <- navbarPage("100+ ATL Book Boxes", id = "nav",
+                 
+   tabPanel("Interactive Map",
+            fluidPage(
+              # Make height adaptable to screen, bring drop-downs forward
+              tags$style(type = "text/css", "
+                  #map {height: calc(100vh - 80px) !important;}
+                  .dropdown-menu { z-index: 1050; } /* Higher z-index for dropdowns */
+                  .panel { z-index: 1000; } /* Adjust z-index for the panel */
+                  "),
+              
+              # Use absolutePanel to position the dropdown on the right side
+              absolutePanel(id = "controls", class = "panel panel-default", fixed = TRUE,
+                            draggable = TRUE, top = 60, right = 20, width = 300,
+                            style = "background-color: #f9f9f9; border: 1px solid lightgray; padding: 15px; border-radius: 8px;",  # Custom styles
+                            
+                            selectInput("color_zip_by", "Select Variable to Color Zips By:",
+                                        choices = zip_choices,
+                                        selected = "n_boxes"),
+                            materialSwitch("show_zip_brds", 
+                                           label = "Zip Densities", 
+                                           value = TRUE, right = TRUE,
+                                           status = "primary"),  # You can change the status color if desired
+                            materialSwitch("show_box_locs", 
+                                           label = "Bookbox Locations", 
+                                           value = FALSE, right = TRUE,
+                                           status = "primary"),  # You can change the status color if desired
+                            
+                            # checkboxInput("show_box_locs", "Bookbox Locations", value = FALSE),
+                            selectInput("color_box_by", "Select Variable to Color Bookbox Locations By:",
+                                        choices = box_choices,
+                                        selected = "n_boxes")
+              ),
+              
+              # Color palette buttons positioned in bottom-right corner
+              paletteButtonUI("palette_buttons"),
+              
+              # Leaflet map main panel
+              mainPanel(
+                leafletOutput("map", width = "100%", height = '100vh')  # Adjust height if needed
+              ),
+              
+              # Attribution overlay at the bottom center
+              tags$div(style = "position: absolute; bottom: 7.5px; left: 35%; 
+                       transform: translateX(-50%); transform: translateX(-50%); 
+                       color: gray; font-size: 12px;",
+                       "Data compiled by ", tags$em('Connor Gallimore'))
+            )
+   ),
+   
+   tabPanel("About",
+            fluidPage(
+              h2("About This Project"),
+              p("This interactive map visualizes the density of book boxes across various zip codes. The data presented includes demographic information, community resources, and socioeconomic indicators."),
+              
+              p("Data Sources:"),
+              tags$ul(
+                tags$li("Book Box Locations: Collected from community engagement."),
+                tags$li("Community of Interest (COI) Data: Provided by relevant social services."),
+                tags$li("Demographic Data: Sourced from the U.S. Census Bureau.")
+              ),
+              
+              p("For further details, please refer to the project's documentation or contact the project team."),
+              hr(),
+              h4("Additional Information"),
+              p("This project aims to foster community awareness and promote resource sharing through an engaging and informative interface.")
+            )
+   )
 )
 
 
 # Define server logic required to draw the map
 server <- function(input, output, session) {
   
-  # Convert inputs to list that can be passed to legend titles
+  # Convert zip/box choices to list that can be passed to legend titles
   var_lookup <- setNames(as.list(names(box_choices)), unlist(box_choices))
   
   # Use reactive values for palette tracking
   palettes <- reactiveValues(selected_palette = "cividis", 
                              zip_pal = "Reds",     # For zip borders
-                             box_pal = viridis::viridis(7, option = "cividis"))  # For book box markers
-  
+                             box_pal = viridis::viridis(n_bins, option = "cividis"))  # For book box markers
   
   # Create base map
   output$map <- renderLeaflet({
@@ -158,34 +122,16 @@ server <- function(input, output, session) {
       
   })
   
-  # Manage color palette buttons
-  observeEvent(input$c1_bttn, {
-    palettes$selected_palette <- "cividis"
-    palettes$box_pal <- viridis::viridis(7, option = "cividis")  
-    palettes$zip_pal <- "Reds"  # For zip borders
-  })
-  
-  observeEvent(input$c2_bttn, {
-    palettes$selected_palette <- "mako"
-    full_palette <- viridis::viridis(8, option = "mako")  # Generate n+1 colors
-    palettes$box_pal <- full_palette[-8]                  # Remove brightest color
-    palettes$zip_pal <- "Reds"                            # For zip borders
-  })
-  
-  observeEvent(input$c3_bttn, {
-    palettes$selected_palette <- "rocket"
-    full_palette <- viridis::viridis(8, option = "rocket")  # Same as above
-    palettes$box_pal <- full_palette[-8]  
-    palettes$zip_pal <- "Blues"  
-  })
-  
+  # Manage color palette buttons with observeEvent module
+  paletteButtonServer("palette_buttons", palettes, num_bins =  n_bins)
   
   # Manage zip borders overlay
   observe({
     if (input$show_zip_brds) {
       color_zip_by <- input$color_zip_by
-      zip_cdata <- df[[color_zip_by]]
-      pal <- colorBin(palettes$zip_pal, domain = zip_cdata, bins = 7, pretty = FALSE)
+      zip_cdata <- zip_df[[color_zip_by]]
+      pal <- colorBin(palettes$zip_pal, domain = zip_cdata, 
+                      bins = n_bins, pretty = FALSE)
       
       h_opts <- highlightOptions(color = "black", weight = 2, 
                                  bringToFront = FALSE, fillOpacity = 0.9) 
@@ -210,19 +156,6 @@ server <- function(input, output, session) {
     }
   })
   
-  # observeEvent(input$map_shape_click, {
-  #   clicked_zip <- input$map_shape_click$id
-  #   
-  #   leafletProxy("map", data = sub_z_srt) %>%
-  #     clearGroup("zip_borders") %>%
-  #     addPolygons(
-  #       fillColor = ~ifelse(ZCTA5CE10 == clicked_zip, ~pal(zip_cdata), NA),  # Gray out non-selected polygons
-  #       fillOpacity = ~ifelse(ZCTA5CE10 == clicked_zip, 0.7, 0.3),  # Adjust opacity for non-selected
-  #       color = ~ifelse(ZCTA5CE10 == clicked_zip, "black", NA),  # Black for selected, no border for non-selected
-  #       weight = ~ifelse(ZCTA5CE10 == clicked_zip, 2, 1),  # Thicker border for selected polygon
-  #       group = "zip_borders"
-  #     )
-  # })
 
   # Manage book box markers overlay
   observe({
@@ -232,7 +165,8 @@ server <- function(input, output, session) {
       if (color_box_by == "self_c" || color_box_by == "charted") {
         pal_pts <- colorFactor(palettes$box_pal, box_cdata)
       } else {
-        pal_pts <- colorBin(palettes$box_pal, domain = box_cdata, pretty = FALSE)
+        pal_pts <- colorBin(palettes$box_pal, domain = box_cdata, 
+                            pretty = FALSE)
       }
       
       # Capture current zoom level to adjust marker size
