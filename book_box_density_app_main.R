@@ -101,12 +101,12 @@ ui <- fluidPage(
   # Use absolutePanel to position the dropdown on the right side
   absolutePanel(id = "controls", class = "panel panel-default", fixed = TRUE,
                 draggable = TRUE, top = 60, right = 20, width = 300,
-                selectInput("color_by", "Select Variable to Color Map By:",
+                selectInput("color_zip_by", "Select Variable to Color Map By:",
                             choices = zip_choices,
                             selected = "n_boxes"),
                 checkboxInput("show_zip_brds", "Zip Densities", value = TRUE),
                 checkboxInput("show_box_locs", "Bookbox Locations", value = FALSE),
-                selectInput("color_box_locs", "Select Variable to Color Bookbox Locations By:",
+                selectInput("color_box_by", "Select Variable to Color Bookbox Locations By:",
                             choices = box_choices,
                             selected = "n_boxes"),
   ),
@@ -158,47 +158,49 @@ server <- function(input, output, session) {
       
   })
   
-  # Manage color palette based on button clicks using observeEvent
+  # Manage color palette buttons
   observeEvent(input$c1_bttn, {
     palettes$selected_palette <- "cividis"
-    palettes$box_pal <- viridis::viridis(7, option = "cividis")  # Standard 7-bin palette
+    palettes$box_pal <- viridis::viridis(7, option = "cividis")  
     palettes$zip_pal <- "Reds"  # For zip borders
   })
   
   observeEvent(input$c2_bttn, {
     palettes$selected_palette <- "mako"
-    full_palette <- viridis::viridis(8, option = "mako")  # Generate 8 colors
-    palettes$box_pal <- full_palette[-8]  # Remove the brightest color
-    palettes$zip_pal <- "Reds"  # For zip borders
+    full_palette <- viridis::viridis(8, option = "mako")  # Generate n+1 colors
+    palettes$box_pal <- full_palette[-8]                  # Remove brightest color
+    palettes$zip_pal <- "Reds"                            # For zip borders
   })
   
   observeEvent(input$c3_bttn, {
     palettes$selected_palette <- "rocket"
-    full_palette <- viridis::viridis(8, option = "rocket")  # Generate 8 colors
-    palettes$box_pal <- full_palette[-8]  # Remove the brightest color
-    palettes$zip_pal <- "Blues"  # For zip borders
+    full_palette <- viridis::viridis(8, option = "rocket")  # Same as above
+    palettes$box_pal <- full_palette[-8]  
+    palettes$zip_pal <- "Blues"  
   })
   
   
   # Manage zip borders overlay
   observe({
     if (input$show_zip_brds) {
-      color_by <- input$color_by
-      colorData <- df[[color_by]]
-      # Good color combos: Blues & Rocket
-      #                    Reds & Mako/Cividis
-      pal <- colorBin(palettes$zip_pal, domain = colorData, bins = 7, pretty = FALSE)
+      color_zip_by <- input$color_zip_by
+      zip_cdata <- df[[color_zip_by]]
+      pal <- colorBin(palettes$zip_pal, domain = zip_cdata, bins = 7, pretty = FALSE)
+      
+      h_opts <- highlightOptions(color = "black", weight = 2, 
+                                 bringToFront = FALSE, fillOpacity = 0.9) 
       
       leafletProxy("map", data = sub_z_srt) %>%
         clearGroup("zip_borders") %>%             # Clear only the polygon group
         removeControl("bords_legend") %>%         # Clear previous box legend
-        addPolygons(fillColor = ~pal(colorData),
+        addPolygons(fillColor = ~pal(zip_cdata),
                     fillOpacity = 0.7, color = "black", weight = 1, 
                     group = "zip_borders",
+                    highlightOptions = h_opts,
                     popup = ~paste("Zip:", ZCTA5CE10, "<br>",
-                                   var_lookup[[color_by]], ":", colorData) ) %>%
-        addLegend("topright", pal = pal, values = colorData, 
-                  title = var_lookup[[color_by]], 
+                                   var_lookup[[color_zip_by]], ":", zip_cdata) ) %>%
+        addLegend("topright", pal = pal, values = zip_cdata, 
+                  title = var_lookup[[color_zip_by]], 
                   layerId = "bords_legend",
                   labFormat = labelFormat(digits = 1))    
       } else {
@@ -214,23 +216,23 @@ server <- function(input, output, session) {
   #   leafletProxy("map", data = sub_z_srt) %>%
   #     clearGroup("zip_borders") %>%
   #     addPolygons(
-  #       fillColor = ~ifelse(ZCTA5CE10 == clicked_zip, ~pal(colorData), NA),  # Gray out non-selected polygons
+  #       fillColor = ~ifelse(ZCTA5CE10 == clicked_zip, ~pal(zip_cdata), NA),  # Gray out non-selected polygons
   #       fillOpacity = ~ifelse(ZCTA5CE10 == clicked_zip, 0.7, 0.3),  # Adjust opacity for non-selected
   #       color = ~ifelse(ZCTA5CE10 == clicked_zip, "black", NA),  # Black for selected, no border for non-selected
   #       weight = ~ifelse(ZCTA5CE10 == clicked_zip, 2, 1),  # Thicker border for selected polygon
   #       group = "zip_borders"
   #     )
   # })
-  # 
+
   # Manage book box markers overlay
   observe({
     if (input$show_box_locs) {
-      color_box_locs <- input$color_box_locs
-      colorBoxData <- merged_dat[[color_box_locs]]
-      if (color_box_locs == "self_c" || color_box_locs == "charted") {
-        pal_pts <- colorFactor(palettes$box_pal, colorBoxData)
+      color_box_by <- input$color_box_by
+      box_cdata <- merged_dat[[color_box_by]]
+      if (color_box_by == "self_c" || color_box_by == "charted") {
+        pal_pts <- colorFactor(palettes$box_pal, box_cdata)
       } else {
-        pal_pts <- colorBin(palettes$box_pal, domain = colorBoxData, pretty = FALSE)
+        pal_pts <- colorBin(palettes$box_pal, domain = box_cdata, pretty = FALSE)
       }
       
       # Capture current zoom level to adjust marker size
@@ -241,14 +243,14 @@ server <- function(input, output, session) {
         clearGroup("book_boxes") %>%            # Clear existing markers
         removeControl("boxes_legend") %>%         # Clear previous box legend
         addCircles(lng = ~Longitude, lat = ~Latitude,
-                   radius = radius, color = ~pal_pts(colorBoxData),
+                   radius = radius, color = ~pal_pts(box_cdata),
                    stroke = FALSE, fillOpacity = 0.8, group = "book_boxes", 
                    popup = ~paste("Latitude:", Latitude, "<br>",
                                   "Longitude:", Longitude, "<br>",
                                   "Address:", paste0(Number, " ", Street, ", ", Zip), "<br>",
-                                  var_lookup[[color_box_locs]], ":", colorBoxData) ) %>%
-        addLegend("bottomright", pal = pal_pts, values = colorBoxData, 
-                  title = var_lookup[[color_box_locs]], 
+                                  var_lookup[[color_box_by]], ":", box_cdata) ) %>%
+        addLegend("bottomright", pal = pal_pts, values = box_cdata, 
+                  title = var_lookup[[color_box_by]], 
                   layerId = "boxes_legend",
                   labFormat = labelFormat(digits = 1))
       
