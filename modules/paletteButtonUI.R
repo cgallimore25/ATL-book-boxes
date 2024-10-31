@@ -1,4 +1,5 @@
-## Module for palette buttons
+## Module UI for palette buttons
+# create a row of 3 buttons from palette images
 
 paletteButtonUI <- function(id) {
   ns <- NS(id)  # Create a namespace
