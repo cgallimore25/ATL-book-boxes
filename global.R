@@ -74,3 +74,20 @@ sub_zc <- zc_spatial %>%
 sub_z_srt = sub_zc %>%
   arrange(ZCTA5CE10)
 
+# Associate column variables with clean drop-down menu choices
+zip_choices= c("Number of boxes" = "n_boxes",
+               "Ed resources" = "r_ed_nat", 
+               "Health, env, safety" = "r_he_nat", 
+               "Socioeconomic" = "r_se_nat", 
+               "Composite COI" = "r_coi_nat", 
+               "Community diversity" = "s_entropy")
+
+box_choices= c(zip_choices, 
+               "Self-collected" = "self_c", 
+               "Online" = "charted")
+
+n_bins <- 7    # default bin number for color palettes
+
+# Convert zip/box choices to list that can be passed to legend titles
+var_lookup <- setNames(as.list(names(box_choices)), unlist(box_choices))
+
