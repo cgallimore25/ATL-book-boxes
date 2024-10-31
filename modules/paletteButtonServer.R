@@ -2,7 +2,7 @@
 
 paletteButtonServer <- function(id, palettes, num_bins = 7) {  # Default value is 7
   moduleServer(id, function(input, output, session) {
-    
+
     observeEvent(input$c1_bttn, {
       palettes$selected_palette <- "cividis"
       palettes$box_pal <- viridis::viridis(num_bins, option = "cividis")  # Use hard-coded num_bins
