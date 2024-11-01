@@ -30,7 +30,7 @@ dem_norm <- data.frame(sub_COIs$zip, sub_COIs[, 7:12] / sub_COIs$pop)
 names(dem_norm)[names(dem_norm) == 'sub_COIs.zip'] <- 'zip'
 dem_norm$zip <- as.factor(dem_norm$zip)
 
-# Shannon Entropy function -- for demographic diversity
+# Shannon Entropy function -- for community diversity
 shannon_entropy <- function(row) {
   prob <- row / sum(row)
   prob <- prob[prob > 0]
