@@ -7,9 +7,9 @@ library(readr)
 library(dplyr)
 
 # Read in book box data, COI data, and zip code spatial data
-box_data <- read.csv('C:\\Users\\cgallimore1\\Documents\\R_projects\\ATL-book-boxes\\data\\Book_box_locs.csv')
-COI_data <- read.csv('C:\\Users\\cgallimore1\\Documents\\R_projects\\ATL-book-boxes\\data\\2020_COI_from_zip.csv')
-zc_spatial <- st_read('C:\\Users\\cgallimore1\\Documents\\R_projects\\ATL-book-boxes\\data\\georgia-zip-codes-_1578.geojson')
+box_data <- read.csv("data/Book_box_locs.csv")
+COI_data <- read.csv("data/2020_COI_from_zip.csv")
+zc_spatial <- st_read("data/georgia-zip-codes-_1578.geojson")
 
 # Make some categorical variables
 box_data$Zip <- as.factor(box_data$Zip)
