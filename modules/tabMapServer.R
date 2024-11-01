@@ -3,6 +3,11 @@
 tabMapServer <- function(id, n_bins, var_lookup, zip_df, sub_z_srt, merged_dat) {
   moduleServer(id, function(input, output, session) {
     
+    # Fix to ensure polygon render
+    session$onFlushed(function() {
+      updateMaterialSwitch(session, "show_zip_brds", value = TRUE)   # Set back to TRUE
+    })
+    
     # Initial reactive palettes for map elements
     palettes <- reactiveValues(
       selected_palette = "cividis", 
