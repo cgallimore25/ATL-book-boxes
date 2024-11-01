@@ -1,4 +1,14 @@
+# Exclude R project settings
 .Rproj.user
+*.Rproj
+
+# Ignore logs, markdown, and data processing scripts
+*.log
+*.md
+dev_scripts/
+
+# Ignore local development files
+.DS_Store
 .Rhistory
-.RData
-.Ruserdata
+
+
