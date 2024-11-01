@@ -16,7 +16,7 @@ tabAboutUI <- function(id) {
     p("With an interest in indicators and issues of health, education, safety, and socioeconomic inequity, I incorporated nationally normalized zip code estimates from the", 
        tags$a(href = "https://www.diversitydatakids.org/child-opportunity-index?_ga=2.130754447.1489633750.1679850921-1316632825.1679594824", "Child Opportunity Index", target = "_blank"), "(COI).
        The COI is a composite index of children's neighborhood opportunity, consisting of 3 major domains: Education (ED), Health and Environment (HE), and Social and Economic factors (SE).
-       See how coloring the zip areas and box points by different COI variables relate to the (far from exhaustive) distribution of bookboxes!
+       See how different combinations of COI variables map onto each other relative to the (far from exhaustive) distribution of bookboxes!
        Read on for details about the variables and user interactions."),
     
     hr(),
