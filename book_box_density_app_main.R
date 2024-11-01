@@ -1,21 +1,10 @@
 # Clear all
 rm(list = ls())
 
-library(viridisLite)
-library(viridis)
-library(leaflet)
-library(shiny)
 library(shinyWidgets)
 
 # Get data
 source("global.R")
-
-# Load modules
-source("modules/paletteButtonUI.R")
-source("modules/paletteButtonServer.R")
-source("modules/tabMapUI.R")
-source("modules/tabAboutUI.R")
-source("modules/tabMapServer.R")
 
 
 # Define UI for the Shiny app
