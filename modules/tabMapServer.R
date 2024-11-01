@@ -18,6 +18,8 @@ tabMapServer <- function(id, n_bins, var_lookup, zip_df, sub_z_srt, merged_dat) 
       leaflet() %>%
         addTiles() %>%
         setView(lng = -84.4, lat = 33.75, zoom = 10) %>%
+        addMapPane("polygons", zIndex = 420) %>%        # Level 2: middle
+        addMapPane("circles", zIndex = 430) %>%         # Level 3: top
         addMiniMap(tiles = providers$Esri.WorldStreetMap, position = "bottomleft", toggleDisplay = TRUE)
     })
     
@@ -33,6 +35,7 @@ tabMapServer <- function(id, n_bins, var_lookup, zip_df, sub_z_srt, merged_dat) 
         leafletProxy("map", data = sub_z_srt) %>%
           clearGroup("zip_borders") %>%
           removeControl("bords_legend") %>%
+          addMapPane("polygons", zIndex = 420) %>%        # Level 2: middle
           addPolygons(fillColor = ~pal(zip_cdata), fillOpacity = 0.7, color = "black", weight = 1, group = "zip_borders",
                       highlightOptions = h_opts,
                       popup = ~paste("Zip:", ZCTA5CE10, "<br>", var_lookup[[color_zip_by]], ":", zip_cdata)) %>%
@@ -57,6 +60,7 @@ tabMapServer <- function(id, n_bins, var_lookup, zip_df, sub_z_srt, merged_dat) 
         leafletProxy("map", data = merged_dat) %>%
           clearGroup("book_boxes") %>%
           removeControl("boxes_legend") %>%
+          addMapPane("circles", zIndex = 430) %>%          # Level 3: top
           addCircles(lng = ~Longitude, lat = ~Latitude, radius = radius, color = ~pal_pts(box_cdata),
                      stroke = FALSE, fillOpacity = 0.8, group = "book_boxes",
                      popup = ~paste("Latitude:", Latitude, "<br>", "Longitude:", Longitude, "<br>", "Address:", paste0(Number, " ", Street, ", ", Zip), "<br>", var_lookup[[color_box_by]], ":", box_cdata)) %>%
