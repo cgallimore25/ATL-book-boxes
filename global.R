@@ -1,3 +1,7 @@
+library(viridisLite)
+library(viridis)
+library(leaflet)
+library(shiny)
 library(sf)
 library(readr)
 library(dplyr)
@@ -90,4 +94,12 @@ n_bins <- 7    # default bin number for color palettes
 
 # Convert zip/box choices to list that can be passed to legend titles
 var_lookup <- setNames(as.list(names(box_choices)), unlist(box_choices))
+
+
+# Load modules
+source("modules/paletteButtonUI.R")
+source("modules/paletteButtonServer.R")
+source("modules/tabMapUI.R")
+source("modules/tabAboutUI.R")
+source("modules/tabMapServer.R")
 
