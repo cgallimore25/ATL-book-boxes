@@ -20,7 +20,7 @@ tabMapUI <- function(id) {
                               choices = zip_choices, selected = "n_boxes"),
                   materialSwitch(ns("show_zip_brds"), 
                                  label = "Zip Densities", 
-                                 value = TRUE, right = TRUE,
+                                 value = FALSE, right = TRUE,
                                  status = "primary"),
                   materialSwitch(ns("show_box_locs"), 
                                  label = "Bookbox Locations", 
