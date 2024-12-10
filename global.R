@@ -90,7 +90,8 @@ box_choices= c(zip_choices,
                "Self-collected" = "self_c", 
                "Online" = "charted")
 
-n_bins <- 7    # default bin number for color palettes
+n_bins  <- 7    # default bin number for color palettes
+n_boxes <- nrow(box_data)
 
 # Convert zip/box choices to list that can be passed to legend titles
 var_lookup <- setNames(as.list(names(box_choices)), unlist(box_choices))
