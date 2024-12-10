@@ -3,13 +3,16 @@
 tabAboutUI <- function(id) {
   ns <- NS(id)  # Create a namespace for the module
   
+  pre_str <- "This project combines my love of open-source data with resource sharing. 
+       In 2023, I noticed that many of the public bookcases in my area were not listed on the Little Free Library web map.
+       I began recording longitude and latitude coordinates for the ones I discovered and cross-referencing them with the listings.
+       The result is this dataset of"
+  post_str <- "bookboxes in the Greater Atlanta area."
+  
   fluidPage(
     
     h3("Inspiration"),
-    p("This project combines my love of open-source data with resource sharing. 
-       In 2023, I noticed that many of the public bookcases in my area were not listed on the Little Free Library web map.
-       I began recording longitude and latitude coordinates for the ones I discovered and cross-referencing them with the listings.
-       The result is this dataset of 105 bookboxes in the Greater Atlanta area."),
+    p(paste(pre_str, as.character(n_boxes), post_str, sep=" ")),
     
     hr(),
     h4("The Child Opportunity Index"),
