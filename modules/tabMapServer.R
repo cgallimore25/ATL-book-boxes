@@ -1,4 +1,4 @@
-## Server module for managing the interactive map
+## Server module for managing interactive map
 
 tabMapServer <- function(id, n_bins, var_lookup, zip_df, sub_z_srt, merged_dat) {
   moduleServer(id, function(input, output, session) {
@@ -27,8 +27,7 @@ tabMapServer <- function(id, n_bins, var_lookup, zip_df, sub_z_srt, merged_dat) 
         addMapPane("circles", zIndex = 430) %>%         # Level 3: top
         addMiniMap(tiles = providers$Esri.WorldStreetMap, 
                    position = "bottomleft",
-                   width = 50,
-                   height= 50, 
+                   width = 50, height= 50, 
                    toggleDisplay = TRUE,
                    minimized = TRUE)
     })
@@ -67,7 +66,8 @@ tabMapServer <- function(id, n_bins, var_lookup, zip_df, sub_z_srt, merged_dat) 
       if (input$show_box_locs) {
         color_box_by <- input$color_box_by
         box_cdata <- merged_dat[[color_box_by]]
-        pal_pts <- if (color_box_by %in% c("self_c", "charted")) colorFactor(palettes$box_pal, box_cdata) else colorBin(palettes$box_pal, domain = box_cdata, pretty = FALSE)
+        pal_pts <- if (color_box_by %in% c("self_c", "charted")) colorFactor(palettes$box_pal, box_cdata) 
+                   else colorBin(palettes$box_pal, domain = box_cdata, pretty = FALSE)
         
         zoom_level <- input$map_zoom
         radius <- 110000 * (0.6 ^ zoom_level)
