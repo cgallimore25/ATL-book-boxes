@@ -3,11 +3,8 @@
 tabMapUI <- function(id) {
   ns <- NS(id)  # Create a namespace for the module
   
-  # layout_params <- if (is_mobile) {
-  #   list(top = 10, right = 10, width = 250, padding = 10)
-  # } else {
-  #   list(top = 60, right = 20, width = 300, padding = 15)
-  # }
+  # Detect device type
+  # mobileDetect(ns('isMobile'))
   
   fluidPage(
     # Make height adaptable to screen, bring drop-downs forward
@@ -18,12 +15,13 @@ tabMapUI <- function(id) {
     ")),
     
     # Use absolutePanel to position the dropdown on the right side
-    absolutePanel(id = ns("controls"), class = "panel panel-default", fixed = TRUE,
+    absolutePanel(id = ns("controls"), 
+                  class = "panel panel-default", 
+                  fixed = TRUE,
                   draggable = TRUE, 
-                  # top = layout_params$top, 
-                  # right = layout_params$right, 
-                  # width = layout_params$width,
-                  top = 60, right = 20, width = 300,
+                  top =   60, 
+                  right = 20, 
+                  width = 300,
                   style = "background-color: #f9f9f9; border: 1px solid lightgray; padding: 15px; border-radius: 8px;",  # Custom styles
                   
                   selectInput(ns("color_zip_by"), "Color Zips By:",
