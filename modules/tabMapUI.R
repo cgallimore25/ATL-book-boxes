@@ -8,7 +8,7 @@ tabMapUI <- function(id) {
     tags$style(type = "text/css", glue::glue("
       #{ns('map')} {{height: calc(100vh - 80px) !important;}}
       .dropdown-menu {{ z-index: 1050; }} /* Higher z-index for dropdowns */
-      .panel {{ z-index: 1000; }} /* Adjust z-index for the panel */
+      .panel {{ z-index: 1000; }}         /* Adjust z-index for the panel */
     ")),
     
     # Use absolutePanel to position the dropdown on the right side
