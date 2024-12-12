@@ -4,6 +4,11 @@ library(shinyWidgets)
 
 ui <- navbarPage("100+ ATL Book Boxes", id = "nav", collapsible = TRUE,
       
+      # Include the mobile detection script
+      # tags$head(
+      #   tags$script(src = "mobile-detect.js")
+      # ),
+      
       # Map UI module
       tabPanel("Interactive Map", tabMapUI("interactive_map")),
       
