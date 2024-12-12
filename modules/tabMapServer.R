@@ -8,7 +8,7 @@ tabMapServer <- function(id, n_bins, var_lookup, zip_df, sub_z_srt, merged_dat) 
     #   updateMaterialSwitch(session, "show_zip_brds", value = TRUE)   # Set back to TRUE
     # })
     
-    selectionPanelServer("controls")
+    user_select <- selectionPanelServer("controls")
     
     # Initial reactive palettes for map elements
     palettes <- reactiveValues(
@@ -35,10 +35,10 @@ tabMapServer <- function(id, n_bins, var_lookup, zip_df, sub_z_srt, merged_dat) 
     })
     
     # Manage zip borders overlay------------------------------------------------
-    observe({
-      if (input$show_zip_brds) {
-        # color_zip_by <- input$color_zip_by
-        zip_cdata <- zip_df[[color_zip_by()]]
+    observeEvent(user_select$show_zip_brds(), {
+      if (user_select$show_zip_brds()) {  
+      # color_zip_by <- input$color_zip_by
+        zip_cdata <- zip_df[[user_select$color_zip_by()]]
         pal <- colorBin(palettes$zip_pal, domain = zip_cdata, bins = n_bins, pretty = FALSE)
         
         h_opts <- highlightOptions(color = "black", weight = 2, bringToFront = FALSE, fillOpacity = 0.9)
@@ -51,12 +51,12 @@ tabMapServer <- function(id, n_bins, var_lookup, zip_df, sub_z_srt, merged_dat) 
                       color = "black", weight = 1, group = "zip_borders",
                       highlightOptions = h_opts,
                       popup = ~paste("Zip:", ZCTA5CE10, "<br>", 
-                                     var_lookup[[color_zip_by()]], ":", zip_cdata)) %>%
+                                     var_lookup[[user_select$color_zip_by()]], ":", zip_cdata)) %>%
           addLegend("topright", pal = pal, values = zip_cdata, 
-                    title = var_lookup[[color_zip_by()]], 
+                    title = var_lookup[[user_select$color_zip_by()]], 
                     layerId = "bords_legend", 
                     labFormat = labelFormat(digits = 1))
-      } else {
+       } else {
         leafletProxy("map") %>%
           clearGroup("zip_borders") %>%
           removeControl("bords_legend")
@@ -64,28 +64,30 @@ tabMapServer <- function(id, n_bins, var_lookup, zip_df, sub_z_srt, merged_dat) 
     })
     
     # Manage book box markers overlay-------------------------------------------
-    observe({
-      if (show_box_locs()) {
-        box_cdata <- merged_dat[[color_box_by()]]
-        pal_pts <- if (color_box_by() %in% c("self_c", "charted")) colorFactor(palettes$box_pal, box_cdata) 
+    observeEvent(user_select$show_box_locs(), {
+      if (user_select$show_box_locs()) {
+        box_cdata <- merged_dat[[user_select$color_box_by()]]
+        pal_pts <- if (user_select$color_box_by() %in% c("self_c", "charted")) colorFactor(palettes$box_pal, box_cdata) 
                    else colorBin(palettes$box_pal, domain = box_cdata, pretty = FALSE)
         
-        zoom_level <- input$map_zoom
-        radius <- 110000 * (0.6 ^ zoom_level)
+        
+        radius <- reactive({
+          110000 * (0.6 ^ input$map_zoom)
+        }) 
         
         leafletProxy("map", data = merged_dat) %>%
           clearGroup("book_boxes") %>%
           removeControl("boxes_legend") %>%
           addMapPane("circles", zIndex = 430) %>%          # Level 3: top
-          addCircles(lng = ~Longitude, lat = ~Latitude, radius = radius, 
+          addCircles(lng = ~Longitude, lat = ~Latitude, radius = radius(), 
                      color = ~pal_pts(box_cdata), stroke = FALSE, 
                      fillOpacity = 0.8, group = "book_boxes",
                      popup = ~paste("Latitude:", Latitude, "<br>", 
                                     "Longitude:", Longitude, "<br>", 
                                     "Address:", paste0(Number, " ", Street, ", ", Zip), "<br>", 
-                                    var_lookup[[color_box_by()]], ":", box_cdata)) %>%
+                                    var_lookup[[user_select$color_box_by()]], ":", box_cdata)) %>%
           addLegend("bottomright", pal = pal_pts, values = box_cdata, 
-                    title = var_lookup[[color_box_by()]], 
+                    title = var_lookup[[user_select$color_box_by()]], 
                     layerId = "boxes_legend", 
                     labFormat = labelFormat(digits = 1))
       } else {
