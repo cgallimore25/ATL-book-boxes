@@ -3,6 +3,93 @@
 tabMapServer <- function(id, n_bins, var_lookup, zip_df, sub_z_srt, merged_dat) {
   moduleServer(id, function(input, output, session) {
     
+    # Mobile device detection reactive -- javascript method
+    # is_mobile_device <- reactive({
+    #   isTRUE(input$is_mobile_device)
+    # })
+    
+    # shinybrowser method
+    # is_mobile_device <- observe({
+    #   shinybrowser::get_all_info()
+    #   })
+    
+    is_mobile <- reactiveVal()
+    
+    observe({
+      info <- shinybrowser::get_all_info()
+      is_mobile <- is_mobile(info)
+      # str(shinybrowser::get_all_info())
+      })
+      
+    
+    # Create reactive values to store and manage inputs
+    map_inputs <- reactiveValues(
+      show_zip_brds = TRUE,
+      show_box_locs = FALSE,
+      color_zip_by = "n_boxes",
+      color_box_by = "n_boxes"
+    )
+    
+    # Dynamically render controls panel based on mobile detection
+    output$control_panel <- renderUI({
+      
+      info <- is_mobile()
+      
+      # Panel configuration based on mobile status
+      panel_config <- if (!is.null(info) && info$device == "Mobile") {
+        list(
+          id = session$ns("controls"), 
+          class = "panel panel-default mobile-panel", 
+          fixed = TRUE,
+          draggable = FALSE, 
+          top = NULL,
+          right = 0,
+          bottom = 0,
+          width = NULL,
+          style = "background-color: #f9f9f9; border: 1px solid lightgray; padding: 15px; border-radius: 8px; width: 100%;"
+        )
+      } else {
+        list(
+          id = session$ns("controls"), 
+          class = "panel panel-default", 
+          fixed = TRUE,
+          draggable = TRUE, 
+          top = 60,
+          right = 20,
+          width = 300,
+          style = "background-color: #f9f9f9; border: 1px solid lightgray; padding: 15px; border-radius: 8px;"
+        )
+      }
+      
+      # Create the absolute panel with dynamic configuration
+      do.call(absolutePanel, c(
+        panel_config,
+        list(
+          selectInput(session$ns("color_zip_by"), "Color Zips By:",
+                      choices = zip_choices, selected = map_inputs$color_zip_by),
+          materialSwitch(session$ns("show_zip_brds"), 
+                         label = "Zip Densities", 
+                         value = map_inputs$show_zip_brds, right = TRUE,
+                         status = "primary"),
+          materialSwitch(session$ns("show_box_locs"), 
+                         label = "Bookbox Locations", 
+                         value = map_inputs$show_box_locs, right = TRUE,
+                         status = "primary"),
+          
+          selectInput(session$ns("color_box_by"), "Color Boxes By:",
+                      choices = box_choices, selected = map_inputs$color_box_by)
+        )
+      ))
+    })
+    
+    # Observe and update reactive values for inputs
+    observe({
+      map_inputs$show_zip_brds <- input$show_zip_brds %||% FALSE
+      map_inputs$show_box_locs <- input$show_box_locs %||% FALSE
+      map_inputs$color_zip_by <- input$color_zip_by %||% "n_boxes"
+      map_inputs$color_box_by <- input$color_box_by %||% "n_boxes"
+    })
+    
     # Ensure polygon render
     session$onFlushed(function() {
       updateMaterialSwitch(session, "show_zip_brds", value = TRUE)   # Set back to TRUE
@@ -34,8 +121,8 @@ tabMapServer <- function(id, n_bins, var_lookup, zip_df, sub_z_srt, merged_dat) 
     
     # Manage zip borders overlay------------------------------------------------
     observe({
-      if (input$show_zip_brds) {
-        color_zip_by <- input$color_zip_by
+      if (map_inputs$show_zip_brds) {
+        color_zip_by <- map_inputs$color_zip_by
         zip_cdata <- zip_df[[color_zip_by]]
         pal <- colorBin(palettes$zip_pal, domain = zip_cdata, bins = n_bins, pretty = FALSE)
         
@@ -63,8 +150,8 @@ tabMapServer <- function(id, n_bins, var_lookup, zip_df, sub_z_srt, merged_dat) 
     
     # Manage book box markers overlay-------------------------------------------
     observe({
-      if (input$show_box_locs) {
-        color_box_by <- input$color_box_by
+      if (map_inputs$show_box_locs) {
+        color_box_by <- map_inputs$color_box_by
         box_cdata <- merged_dat[[color_box_by]]
         pal_pts <- if (color_box_by %in% c("self_c", "charted")) colorFactor(palettes$box_pal, box_cdata) 
                    else colorBin(palettes$box_pal, domain = box_cdata, pretty = FALSE)
