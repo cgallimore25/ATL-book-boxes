@@ -4,9 +4,11 @@ tabMapServer <- function(id, n_bins, var_lookup, zip_df, sub_z_srt, merged_dat) 
   moduleServer(id, function(input, output, session) {
     
     # Ensure polygon render
-    session$onFlushed(function() {
-      updateMaterialSwitch(session, "show_zip_brds", value = TRUE)   # Set back to TRUE
-    })
+    # session$onFlushed(function() {
+    #   updateMaterialSwitch(session, "show_zip_brds", value = TRUE)   # Set back to TRUE
+    # })
+    
+    selectionPanelServer("controls")
     
     # Initial reactive palettes for map elements
     palettes <- reactiveValues(
@@ -35,8 +37,8 @@ tabMapServer <- function(id, n_bins, var_lookup, zip_df, sub_z_srt, merged_dat) 
     # Manage zip borders overlay------------------------------------------------
     observe({
       if (input$show_zip_brds) {
-        color_zip_by <- input$color_zip_by
-        zip_cdata <- zip_df[[color_zip_by]]
+        # color_zip_by <- input$color_zip_by
+        zip_cdata <- zip_df[[color_zip_by()]]
         pal <- colorBin(palettes$zip_pal, domain = zip_cdata, bins = n_bins, pretty = FALSE)
         
         h_opts <- highlightOptions(color = "black", weight = 2, bringToFront = FALSE, fillOpacity = 0.9)
@@ -49,9 +51,9 @@ tabMapServer <- function(id, n_bins, var_lookup, zip_df, sub_z_srt, merged_dat) 
                       color = "black", weight = 1, group = "zip_borders",
                       highlightOptions = h_opts,
                       popup = ~paste("Zip:", ZCTA5CE10, "<br>", 
-                                     var_lookup[[color_zip_by]], ":", zip_cdata)) %>%
+                                     var_lookup[[color_zip_by()]], ":", zip_cdata)) %>%
           addLegend("topright", pal = pal, values = zip_cdata, 
-                    title = var_lookup[[color_zip_by]], 
+                    title = var_lookup[[color_zip_by()]], 
                     layerId = "bords_legend", 
                     labFormat = labelFormat(digits = 1))
       } else {
@@ -63,10 +65,9 @@ tabMapServer <- function(id, n_bins, var_lookup, zip_df, sub_z_srt, merged_dat) 
     
     # Manage book box markers overlay-------------------------------------------
     observe({
-      if (input$show_box_locs) {
-        color_box_by <- input$color_box_by
-        box_cdata <- merged_dat[[color_box_by]]
-        pal_pts <- if (color_box_by %in% c("self_c", "charted")) colorFactor(palettes$box_pal, box_cdata) 
+      if (show_box_locs()) {
+        box_cdata <- merged_dat[[color_box_by()]]
+        pal_pts <- if (color_box_by() %in% c("self_c", "charted")) colorFactor(palettes$box_pal, box_cdata) 
                    else colorBin(palettes$box_pal, domain = box_cdata, pretty = FALSE)
         
         zoom_level <- input$map_zoom
@@ -82,9 +83,9 @@ tabMapServer <- function(id, n_bins, var_lookup, zip_df, sub_z_srt, merged_dat) 
                      popup = ~paste("Latitude:", Latitude, "<br>", 
                                     "Longitude:", Longitude, "<br>", 
                                     "Address:", paste0(Number, " ", Street, ", ", Zip), "<br>", 
-                                    var_lookup[[color_box_by]], ":", box_cdata)) %>%
+                                    var_lookup[[color_box_by()]], ":", box_cdata)) %>%
           addLegend("bottomright", pal = pal_pts, values = box_cdata, 
-                    title = var_lookup[[color_box_by]], 
+                    title = var_lookup[[color_box_by()]], 
                     layerId = "boxes_legend", 
                     labFormat = labelFormat(digits = 1))
       } else {
