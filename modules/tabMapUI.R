@@ -3,9 +3,6 @@
 tabMapUI <- function(id) {
   ns <- NS(id)  # Create a namespace for the module
   
-  # Detect device type
-  # mobileDetect(ns('isMobile'))
-  
   fluidPage(
     # Make height adaptable to screen, bring drop-downs forward
     tags$style(type = "text/css", glue::glue("
@@ -22,9 +19,6 @@ tabMapUI <- function(id) {
                   top =   60,
                   right = 20,
                   width = 300,
-                  # top = if(is_mobile) 10 else 60, 
-                  # right = if(is_mobile) 10 else 20, 
-                  # width = if(is_mobile) 250 else 300,
                   style = "background-color: #f9f9f9; border: 1px solid lightgray; padding: 15px; border-radius: 8px;",  # Custom styles
                   
                   selectInput(ns("color_zip_by"), "Color Zips By:",
@@ -56,3 +50,12 @@ tabMapUI <- function(id) {
              "Data compiled by ", tags$em('Connor Gallimore'))
   )
 }
+
+
+## Detect device type -- before fluid page
+# mobileDetect(ns('isMobile'))
+
+## Edits for mobile conditional
+# top = if(is_mobile) 10 else 60, 
+# right = if(is_mobile) 10 else 20, 
+# width = if(is_mobile) 250 else 300,
