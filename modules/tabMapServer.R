@@ -27,7 +27,7 @@ tabMapServer <- function(id, n_bins, var_lookup, zip_df, sub_z_srt, merged_dat) 
         addMapPane("circles", zIndex = 430) %>%         # Level 3: top
         addMiniMap(tiles = providers$Esri.WorldStreetMap, 
                    position = "bottomleft",
-                   width = 50, height= 50, 
+                   width = 100, height= 100, 
                    toggleDisplay = TRUE,
                    minimized = TRUE)
     })
