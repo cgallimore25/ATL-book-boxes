@@ -108,7 +108,7 @@ var_lookup <- setNames(as.list(names(box_choices)), unlist(box_choices))
 
 
 # Load modules
-source("modules/mobileDetect.R")
+# source("modules/mobileDetect.R")
 source("modules/paletteButtonUI.R")
 source("modules/paletteButtonServer.R")
 source("modules/tabMapUI.R")
