@@ -7,12 +7,12 @@ tabMapUI <- function(id) {
     
     # Make height adaptable to screen, bring drop-downs forward
     tags$style(type = "text/css", glue::glue("
-      #{ns('map')} {{height: calc(100vh - 80px) !important;}}
+      #{ns('map')} {{height: calc(100vh - 80px) !important; z-index: 1000;}}
       .dropdown-menu {{ z-index: 1050; }} /* Higher z-index for dropdowns */
-      .panel {{ z-index: 1000; }}         /* Adjust z-index for the panel */
+      .panel {{ z-index: 1010; }}         /* Adjust z-index for the panel */
     ")),
     
-    # mobileDetect('isMobile'),
+    mobileDetect('isMobile'),
     
     uiOutput(ns("control_panel")),
     
@@ -30,12 +30,3 @@ tabMapUI <- function(id) {
              "Data compiled by ", tags$em('Connor Gallimore'))
   )
 }
-
-
-## Detect device type -- before fluid page
-# mobileDetect(ns('isMobile'))
-
-## Edits for mobile conditional
-# top = if(is_mobile) 10 else 60, 
-# right = if(is_mobile) 10 else 20, 
-# width = if(is_mobile) 250 else 300,
