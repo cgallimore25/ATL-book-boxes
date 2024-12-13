@@ -3,25 +3,6 @@
 tabMapServer <- function(id, n_bins, var_lookup, zip_df, sub_z_srt, merged_dat) {
   moduleServer(id, function(input, output, session) {
     
-    # Mobile device detection reactive -- javascript method
-    # is_mobile_device <- reactive({
-    #   isTRUE(input$is_mobile_device)
-    # })
-    
-    # shinybrowser method
-    # is_mobile_device <- observe({
-    #   shinybrowser::get_all_info()
-    #   })
-    
-    is_mobile <- reactiveVal()
-    
-    observe({
-      info <- shinybrowser::get_all_info()
-      is_mobile <- is_mobile(info)
-      # str(shinybrowser::get_all_info())
-      })
-      
-    
     # Create reactive values to store and manage inputs
     map_inputs <- reactiveValues(
       show_zip_brds = TRUE,
@@ -34,31 +15,21 @@ tabMapServer <- function(id, n_bins, var_lookup, zip_df, sub_z_srt, merged_dat) 
     output$control_panel <- renderUI({
       
       # Panel configuration based on mobile status
-      panel_config <- if (!is.null(info) && info$device == "Mobile") {
-        list(
+      panel_config <- list(
           id = session$ns("controls"), 
-          class = "panel panel-default mobile-panel", 
+          class = ifelse(isTRUE(input$isMobile), "panel panel-default mobile-panel", "panel panel-default"),
           fixed = TRUE,
-          draggable = FALSE, 
-          top = NULL,
-          right = 0,
-          bottom = 0,
-          width = NULL,
-          style = "background-color: #f9f9f9; border: 1px solid lightgray; padding: 15px; border-radius: 8px; width: 100%;"
-        )
-      } else {
-        list(
-          id = session$ns("controls"), 
-          class = "panel panel-default", 
-          fixed = TRUE,
-          draggable = TRUE, 
+          draggable = TRUE,
           top = 60,
-          right = 20,
-          width = 300,
+          right = if(isTRUE(input$isMobile)) NULL else 20,
+          left = if(isTRUE(input$isMobile)) 10 else NULL,
+          width = if(isTRUE(input$isMobile)) "200" else 300, # 300, for desktop
+          # style = "background-color: #f9f9f9; border: 1px solid lightgray; padding: 15px; border-radius: 8px; width: 100%;"
           style = "background-color: #f9f9f9; border: 1px solid lightgray; padding: 15px; border-radius: 8px;"
         )
-      }
       
+      # print(panel_config)
+
       # Create the absolute panel with dynamic configuration
       do.call(absolutePanel, c(
         panel_config,
@@ -124,13 +95,13 @@ tabMapServer <- function(id, n_bins, var_lookup, zip_df, sub_z_srt, merged_dat) 
         zip_cdata <- zip_df[[color_zip_by]]
         pal <- colorBin(palettes$zip_pal, domain = zip_cdata, bins = n_bins, pretty = FALSE)
         
-        h_opts <- highlightOptions(color = "black", weight = 2, bringToFront = FALSE, fillOpacity = 0.9)
+        h_opts <- highlightOptions(color = "black", weight = 2, bringToFront = FALSE, fillOpacity = 0.8)
         
         leafletProxy("map", data = sub_z_srt) %>%
           clearGroup("zip_borders") %>%
           removeControl("bords_legend") %>%
           addMapPane("polygons", zIndex = 420) %>%        # Level 2: middle
-          addPolygons(fillColor = ~pal(zip_cdata), fillOpacity = 0.7, 
+          addPolygons(fillColor = ~pal(zip_cdata), fillOpacity = 0.65, 
                       color = "black", weight = 1, group = "zip_borders",
                       highlightOptions = h_opts,
                       popup = ~paste("Zip:", ZCTA5CE10, "<br>", 
@@ -162,8 +133,8 @@ tabMapServer <- function(id, n_bins, var_lookup, zip_df, sub_z_srt, merged_dat) 
           removeControl("boxes_legend") %>%
           addMapPane("circles", zIndex = 430) %>%          # Level 3: top
           addCircles(lng = ~Longitude, lat = ~Latitude, radius = radius, 
-                     color = ~pal_pts(box_cdata), stroke = FALSE, 
-                     fillOpacity = 0.8, group = "book_boxes",
+                     color = ~pal_pts(box_cdata), stroke = FALSE,
+                     group = "book_boxes", fillOpacity = 0.8, 
                      popup = ~paste("Latitude:", Latitude, "<br>", 
                                     "Longitude:", Longitude, "<br>", 
                                     "Address:", paste0(Number, " ", Street, ", ", Zip), "<br>", 
