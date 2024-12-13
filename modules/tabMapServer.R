@@ -33,8 +33,6 @@ tabMapServer <- function(id, n_bins, var_lookup, zip_df, sub_z_srt, merged_dat) 
     # Dynamically render controls panel based on mobile detection
     output$control_panel <- renderUI({
       
-      info <- is_mobile()
-      
       # Panel configuration based on mobile status
       panel_config <- if (!is.null(info) && info$device == "Mobile") {
         list(

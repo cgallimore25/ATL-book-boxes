@@ -3,8 +3,6 @@
 tabMapUI <- function(id) {
   ns <- NS(id)  # Create a namespace for the module
   
-  shinybrowser::detect()
-  
   fluidPage(
     
     # Make height adaptable to screen, bring drop-downs forward
@@ -13,6 +11,8 @@ tabMapUI <- function(id) {
       .dropdown-menu {{ z-index: 1050; }} /* Higher z-index for dropdowns */
       .panel {{ z-index: 1000; }}         /* Adjust z-index for the panel */
     ")),
+    
+    # mobileDetect('isMobile'),
     
     uiOutput(ns("control_panel")),
     
