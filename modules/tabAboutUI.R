@@ -25,10 +25,10 @@ tabAboutUI <- function(id) {
     hr(),
     h4("Explanation of variables:"),
     tags$ul(
-      tags$li(tags$code("Ed resources"), tags$code("Health, env, safety"), tags$code("Socioeconomic"), "and", tags$code("Composite COI"), "here represent the nationally normalized major domain and composite scores (out of 100).
+      tags$li(tags$code("Ed resources"), tags$code("Health & safety"), tags$code("Socioeconomic"), "and", tags$code("Composite COI"), "here represent the nationally normalized major domain and composite scores (out of 100).
               See COI 3.0", tags$a(href = "https://data.diversitydatakids.org/dataset/coi30-2010-tracts-child-opportunity-index-3-0-database--2010-census-tracts/resource/0c292d45-8a97-494a-908a-3f937516da3a", "overall", target = "_blank"),  
               "and", tags$a(href= "https://data.diversitydatakids.org/dataset/coi30-2010-tracts-child-opportunity-index-3-0-database--2010-census-tracts/resource/8c7305d8-05f6-494b-bcc9-845b305258e1", "subdomain", target = "_blank"), "data dictionaries."),
-      tags$li(tags$code("Community diversity"), "is an entropy calculation of the American Indian/Alaska Native, Asian/Pacific Islander, Black, White, Hispanic, and Other as proportions of that zip code's population (also contained in the COI dataset). 
+      tags$li(tags$code("Diversity index"), "is an entropy calculation of the American Indian/Alaska Native, Asian/Pacific Islander, Black, White, Hispanic, and Other as proportions of that zip code's population (also contained in the COI dataset). 
               Higher values indicate a more uniform community composition; low values suggest one/few groups represent most people."),
       tags$li(tags$code("Self-collected"), "and", tags$code("Online"), "are categorical 'yes'/'no' variables of whether I logged the coordinates of a bookbox in-person, and whether the box was previously mapped online.")
     ),
