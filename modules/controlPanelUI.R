@@ -10,10 +10,10 @@ controlPanelUI <- function(id, map_inputs, is_mobile) {
     class = ifelse(is_mobile, "panel panel-default mobile-panel", "panel panel-default"),
     fixed = TRUE,
     draggable = TRUE,
-    top = if (is_mobile) 80 else 60,
+    top = if (is_mobile) 80 else 65,
     right = if (!is_mobile) 20 else NULL,
     left = if (is_mobile) 10 else NULL,
-    width = if (is_mobile) 175 else 300, # 300 for desktop
+    width = if (is_mobile) 175 else 280, # 300 for desktop
     style = if (is_mobile) {
       "background-color: #f9f9f9; 
       border: 1px solid lightgray; 
