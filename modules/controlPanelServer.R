@@ -12,9 +12,9 @@ controlPanelServer <- function(id, map_inputs) {
       map_inputs$color_box_by <- input$color_box_by %||% "n_boxes"
     })
     
-    # Ensure polygon render
+    # Ensure polygon render on start
     session$onFlushed(function() {
-      updateMaterialSwitch(session, "show_zip_brds", value = TRUE)  # Force TRUE
+      updateMaterialSwitch(session, "show_zip_brds", value = TRUE)
     })
     
   })

@@ -1,11 +1,11 @@
-## Module for the interactive map tab
+## Module for interactive map tab UI
 
 tabMapUI <- function(id) {
   ns <- NS(id)  # Create a namespace for the module
   
   fluidPage(
 
-    # Make height adaptable to screen, bring drop-downs forward
+    # Specify map height and arrange z-indices of rendered elements
     tags$style(type = "text/css", glue::glue("
       #{ns('map')} {{height: calc(100vh - 80px) !important; z-index: 1000; padding: 0; margin: 0;}}
       div[id$='control_panel'] {{ z-index: 1050; position: absolute; }} /* Adjust z-index for the panel */
@@ -13,8 +13,8 @@ tabMapUI <- function(id) {
       .palette-buttons {{ z-index: 1040; }}
     ")),
     
+    # Detect device type and define placeholder UIs
     mobileDetect('isMobile'),
-    
     uiOutput(ns("control_panel")),
     uiOutput(ns("palette_buttons")),
     

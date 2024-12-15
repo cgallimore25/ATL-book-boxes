@@ -4,8 +4,6 @@ library(leaflet)
 library(shiny)
 library(shinybrowser)
 library(sf)
-# library(readr)
-# library(dplyr)
 
 # Read in book box data, COI data, and zip code spatial data
 merged_dat <- readRDS("data/box_locs_COI_matched.rds")

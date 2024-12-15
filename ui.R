@@ -1,4 +1,4 @@
-## Define UI for Shiny app
+## Define app UI
 
 library(shinyWidgets)
 

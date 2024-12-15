@@ -1,4 +1,4 @@
-## Define server for Shiny app
+## Define server
 
 server <- function(input, output, session) {
   
