@@ -19,11 +19,11 @@ tabMapServer <- function(id, n_bins, var_lookup, zip_df, sub_z_srt, merged_dat) 
     
     # Render control panel and palette buttons based on mobile detection
     output$control_panel <- renderUI({
-      controlPanelUI(session$ns("control_panel"), map_inputs, isTRUE(input$isMobile))  # is_mobile
+      controlPanelUI(session$ns("control_panel"), map_inputs, TRUE) # isTRUE(input$isMobile))  # is_mobile
     })
     
     output$palette_buttons <- renderUI({
-      paletteButtonUI(session$ns("palette_buttons"), isTRUE(input$isMobile))
+      paletteButtonUI(session$ns("palette_buttons"), TRUE) # isTRUE(input$isMobile))
     })
     
     
@@ -34,7 +34,7 @@ tabMapServer <- function(id, n_bins, var_lookup, zip_df, sub_z_srt, merged_dat) 
     
     # Create base map-----------------------------------------------------------
     output$map <- renderLeaflet({
-      is_mobile <- isTRUE(input$isMobile)
+      is_mobile <- TRUE # isTRUE(input$isMobile)
       
       base_map <- if (is_mobile) {
         leaflet(options = leafletOptions(zoomControl = FALSE))
