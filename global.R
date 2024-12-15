@@ -80,12 +80,12 @@ sub_z_srt = sub_zc %>%
   arrange(ZCTA5CE10)
 
 # Associate column variables with clean drop-down menu choices
-zip_choices= c("Number of boxes" = "n_boxes",
+zip_choices= c("Box count" = "n_boxes",
                "Ed resources" = "r_ed_nat", 
-               "Health, env, safety" = "r_he_nat", 
+               "Health & safety" = "r_he_nat", 
                "Socioeconomic" = "r_se_nat", 
                "Composite COI" = "r_coi_nat", 
-               "Community diversity" = "s_entropy")
+               "Diversity index" = "s_entropy")
 
 box_choices= c(zip_choices, 
                "Self-collected" = "self_c", 
@@ -108,6 +108,8 @@ var_lookup <- setNames(as.list(names(box_choices)), unlist(box_choices))
 
 
 # Load modules
+source("modules/controlPanelUI.R")
+source("modules/controlPanelServer.R")
 source("modules/mobileDetect.R")
 source("modules/paletteButtonUI.R")
 source("modules/paletteButtonServer.R")
