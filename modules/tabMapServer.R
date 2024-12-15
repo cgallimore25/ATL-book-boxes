@@ -17,26 +17,24 @@ tabMapServer <- function(id, n_bins, var_lookup, zip_df, sub_z_srt, merged_dat) 
       box_pal = viridis::viridis(n_bins, option = "cividis")
     )
     
-    # Render controls panel based on mobile detection
+    # Render control panel and palette buttons based on mobile detection
     output$control_panel <- renderUI({
-      controlPanelUI(session$ns("control_panel"), map_inputs, TRUE) # isTRUE(input$isMobile))  # is_mobile
+      controlPanelUI(session$ns("control_panel"), map_inputs, isTRUE(input$isMobile))  # is_mobile
     })
     
-    # Render palette buttons 
     output$palette_buttons <- renderUI({
-      paletteButtonUI(session$ns("palette_buttons"), TRUE) # isTRUE(input$isMobile))
+      paletteButtonUI(session$ns("palette_buttons"), isTRUE(input$isMobile))
     })
     
     
-    # Manage control toggle states with input observer module
+    # Manage toggle states and palette buttons with observer modules
     controlPanelServer("control_panel", map_inputs)
-    
-    # Manage color palette buttons with button observer module
     paletteButtonServer("palette_buttons", palettes, num_bins = n_bins)
     
-    # Create base map
+    
+    # Create base map-----------------------------------------------------------
     output$map <- renderLeaflet({
-      is_mobile <- TRUE # isTRUE(input$isMobile)
+      is_mobile <- isTRUE(input$isMobile)
       
       base_map <- if (is_mobile) {
         leaflet(options = leafletOptions(zoomControl = FALSE))
@@ -50,10 +48,8 @@ tabMapServer <- function(id, n_bins, var_lookup, zip_df, sub_z_srt, merged_dat) 
         addMapPane("polygons", zIndex = 420) %>%        # Level 2: middle
         addMapPane("circles", zIndex = 440) %>%         # Level 3: top
         addMiniMap(tiles = providers$Esri.WorldStreetMap, 
-                   position = "bottomleft",
-                   width = 80, height= 80, 
-                   toggleDisplay = TRUE,
-                   minimized = TRUE)
+                   position = "bottomleft", width = 80, height= 80, 
+                   toggleDisplay = TRUE, minimized = TRUE)
     })
     
 
