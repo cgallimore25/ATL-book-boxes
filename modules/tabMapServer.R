@@ -3,7 +3,7 @@
 tabMapServer <- function(id, n_bins, var_lookup, zip_df, sub_z_srt, merged_dat) {
   moduleServer(id, function(input, output, session) {
     
-    # Create reactive values to store and manage inputs
+    # Initialize default toggle & palette states as reactive values
     map_inputs <- reactiveValues(
       show_zip_brds = TRUE,
       show_box_locs = FALSE,
@@ -11,83 +11,52 @@ tabMapServer <- function(id, n_bins, var_lookup, zip_df, sub_z_srt, merged_dat) 
       color_box_by = "n_boxes"
     )
     
-    # Dynamically render controls panel based on mobile detection
-    output$control_panel <- renderUI({
-      
-      # Panel configuration based on mobile status
-      panel_config <- list(
-          id = session$ns("controls"), 
-          class = ifelse(isTRUE(input$isMobile), "panel panel-default mobile-panel", "panel panel-default"),
-          fixed = TRUE,
-          draggable = TRUE,
-          top = 60,
-          right = if(isTRUE(input$isMobile)) NULL else 20,
-          left = if(isTRUE(input$isMobile)) 10 else NULL,
-          width = if(isTRUE(input$isMobile)) "200" else 300, # 300, for desktop
-          # style = "background-color: #f9f9f9; border: 1px solid lightgray; padding: 15px; border-radius: 8px; width: 100%;"
-          style = "background-color: #f9f9f9; border: 1px solid lightgray; padding: 15px; border-radius: 8px;"
-        )
-      
-      # print(panel_config)
-
-      # Create the absolute panel with dynamic configuration
-      do.call(absolutePanel, c(
-        panel_config,
-        list(
-          selectInput(session$ns("color_zip_by"), "Color Zips By:",
-                      choices = zip_choices, selected = map_inputs$color_zip_by),
-          materialSwitch(session$ns("show_zip_brds"), 
-                         label = "Zip Densities", 
-                         value = map_inputs$show_zip_brds, right = TRUE,
-                         status = "primary"),
-          materialSwitch(session$ns("show_box_locs"), 
-                         label = "Bookbox Locations", 
-                         value = map_inputs$show_box_locs, right = TRUE,
-                         status = "primary"),
-          
-          selectInput(session$ns("color_box_by"), "Color Boxes By:",
-                      choices = box_choices, selected = map_inputs$color_box_by)
-        )
-      ))
-    })
-    
-    # Observe and update reactive values for inputs
-    observe({
-      map_inputs$show_zip_brds <- input$show_zip_brds %||% FALSE
-      map_inputs$show_box_locs <- input$show_box_locs %||% FALSE
-      map_inputs$color_zip_by <- input$color_zip_by %||% "n_boxes"
-      map_inputs$color_box_by <- input$color_box_by %||% "n_boxes"
-    })
-    
-    # Ensure polygon render
-    session$onFlushed(function() {
-      updateMaterialSwitch(session, "show_zip_brds", value = TRUE)   # Set back to TRUE
-    })
-    
-    # Initial reactive palettes for map elements
     palettes <- reactiveValues(
       selected_palette = "cividis", 
       zip_pal = "Reds",     
       box_pal = viridis::viridis(n_bins, option = "cividis")
     )
     
-    # Manage color palette buttons with paletteButtonServer module
+    # Render controls panel based on mobile detection
+    output$control_panel <- renderUI({
+      controlPanelUI(session$ns("control_panel"), map_inputs, TRUE) # isTRUE(input$isMobile))  # is_mobile
+    })
+    
+    # Render palette buttons 
+    output$palette_buttons <- renderUI({
+      paletteButtonUI(session$ns("palette_buttons"), TRUE) # isTRUE(input$isMobile))
+    })
+    
+    
+    # Manage control toggle states with input observer module
+    controlPanelServer("control_panel", map_inputs)
+    
+    # Manage color palette buttons with button observer module
     paletteButtonServer("palette_buttons", palettes, num_bins = n_bins)
     
     # Create base map
     output$map <- renderLeaflet({
-      leaflet() %>%
-        addTiles() %>%
+      is_mobile <- TRUE # isTRUE(input$isMobile)
+      
+      base_map <- if (is_mobile) {
+        leaflet(options = leafletOptions(zoomControl = FALSE))
+      } else {
+        leaflet()
+      }
+      
+      base_map %>%  
+      addTiles() %>%
         setView(lng = -84.4, lat = 33.75, zoom = 10) %>%
         addMapPane("polygons", zIndex = 420) %>%        # Level 2: middle
-        addMapPane("circles", zIndex = 430) %>%         # Level 3: top
+        addMapPane("circles", zIndex = 440) %>%         # Level 3: top
         addMiniMap(tiles = providers$Esri.WorldStreetMap, 
                    position = "bottomleft",
-                   width = 100, height= 100, 
+                   width = 80, height= 80, 
                    toggleDisplay = TRUE,
                    minimized = TRUE)
     })
     
+
     # Manage zip borders overlay------------------------------------------------
     observe({
       if (map_inputs$show_zip_brds) {
@@ -131,7 +100,7 @@ tabMapServer <- function(id, n_bins, var_lookup, zip_df, sub_z_srt, merged_dat) 
         leafletProxy("map", data = merged_dat) %>%
           clearGroup("book_boxes") %>%
           removeControl("boxes_legend") %>%
-          addMapPane("circles", zIndex = 430) %>%          # Level 3: top
+          addMapPane("circles", zIndex = 440) %>%          # Level 3: top
           addCircles(lng = ~Longitude, lat = ~Latitude, radius = radius, 
                      color = ~pal_pts(box_cdata), stroke = FALSE,
                      group = "book_boxes", fillOpacity = 0.8, 
