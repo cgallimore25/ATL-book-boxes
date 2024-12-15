@@ -98,14 +98,6 @@ n_boxes <- nrow(box_data)
 var_lookup <- setNames(as.list(names(box_choices)), unlist(box_choices))
 
 
-# Determine device type with JavaScript
-# device_detection_script <- tags$script("
-#   $(document).on('shiny:connected', function() {
-#     var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-#     Shiny.setInputValue('is_mobile', isMobile);
-#   });
-# ")
-
 
 # Load modules
 source("modules/controlPanelUI.R")
