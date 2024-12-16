@@ -26,8 +26,8 @@ tabMapUI <- function(id) {
     
     # Attribution overlay at the bottom center
     tags$div(class = "attribution-overlay",
-             style = "bottom: 7.5px; left: 30%; transform: translateX(-50%); 
-                      color: darkslategray; font-size: 12px;",
+             style = "bottom: 1vh; left: 30%; transform: translateX(-50%); 
+                      width: auto; color: darkslategray; font-size: 10px;",
              "Data compiled by ", tags$em('Connor Gallimore'))
   )
 }
