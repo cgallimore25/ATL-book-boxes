@@ -13,11 +13,14 @@ controlPanelUI <- function(id, map_inputs, is_mobile) {
     top = if (is_mobile) 80 else 65,
     right = if (!is_mobile) 20 else NULL,
     left = if (is_mobile) 10 else NULL,
-    width = if (is_mobile) 175 else 280, # 300 for desktop
+    width = if (is_mobile) 160 else 280, # 300 for desktop
+    # height = "35vh",
     style = if (is_mobile) {
       "background-color: #f9f9f9; 
       border: 1px solid lightgray; 
       padding: 10px; 
+      padding-bottom: 0px; /* Adjust this value as needed */
+      padding-top: 6px; /* Adjust this value as needed */
       border-radius: 8px; 
       opacity: 0.6; 
       transition: opacity 500ms 500ms;"
@@ -37,10 +40,17 @@ controlPanelUI <- function(id, map_inputs, is_mobile) {
     )
   }
   
+  
   # Create the absolute panel
   selection_panel <- do.call(absolutePanel, c(
     panel_config,
     list(
+      # Format labels, drop-down text size, and button spacing
+      tags$style(".control-label { font-size: 13px; }"),
+      tags$style(type='text/css', ".selectize-input { font-size: 13px; height: 12px } .selectize-dropdown { font-size: 12px; line-height: 20px; }"),
+      tags$style(type='text/css', ".material-switch { height: 20px; font-size: 13px}"),
+      
+
       selectInput(ns("color_zip_by"), "Color Zips By:",
                   choices = zip_choices, selected = map_inputs$color_zip_by),
       materialSwitch(ns("show_zip_brds"), 
