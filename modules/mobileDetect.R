@@ -3,7 +3,7 @@
 
 mobileDetect <- function(inputId, value = 0) {
   tagList(
-    singleton(tags$head(tags$script(src = "modules/mobile.js"))),
+    singleton(tags$head(tags$script(src = "www/mobile.js"))),
     tags$input(id = inputId,
                class = "mobile-element",
                type = "hidden")
