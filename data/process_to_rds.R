@@ -74,7 +74,7 @@ sub_zc <- zc_spatial %>%
 sub_z_srt = sub_zc %>%
   arrange(ZCTA5CE10)
 
-st_write(sub_z_srt, "data/zip_polygons.shp")
+st_write(sub_z_srt, "data/zip_polygons.shp", append = FALSE)
 write_rds(zip_df, "data/zip_COI_data.rds")
 write_rds(merged_dat, "data/box_locs_COI_matched.rds")
 
